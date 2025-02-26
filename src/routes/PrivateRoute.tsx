@@ -1,7 +1,7 @@
 import React, { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import useAuth from "../hooks/useAuth"; // Make sure the correct path is used
-import Loader from "../components/Ui/Loader/Loader";
+import Loader from "../components/UI/Loader/Loader";
 
 interface PrivateRouteProps {
   children: ReactNode;

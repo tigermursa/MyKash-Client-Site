@@ -45,10 +45,14 @@ export interface IAuthResponse<T> {
   data: T;
 }
 
+//Resister api
+
 export const registerAccount = (
   data: Partial<IAccount>
 ): Promise<IAuthResponse<IAccount>> =>
   apiRequest<IAuthResponse<IAccount>>("/register", "POST", data);
+
+//Login api
 
 export const loginAccount = (
   identifier: string,
@@ -56,6 +60,7 @@ export const loginAccount = (
 ): Promise<IAuthResponse<IAccount>> =>
   apiRequest<IAuthResponse<IAccount>>("/login", "POST", { identifier, pin });
 
+//Logout api
 export const logoutAccount = (): Promise<IAuthResponse<null>> =>
   apiRequest<IAuthResponse<null>>("/logout", "GET");
 

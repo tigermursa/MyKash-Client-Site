@@ -1,4 +1,6 @@
 import App from "../App";
+import SignIn from "../components/authForm/login";
+import SignUp from "../components/authForm/register";
 import PrivateRoute from "./PrivateRoute";
 import { createBrowserRouter } from "react-router-dom";
 const router = createBrowserRouter([

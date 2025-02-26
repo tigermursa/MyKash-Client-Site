@@ -1,229 +1,217 @@
-import React, { useState } from "react";
-
-import { Link, useNavigate } from "react-router-dom";
-import { signinUser, signupUser } from "../../lib/authApi";
-
+import { useForm, SubmitHandler } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useState } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useRegisterAccount, useLoginAccount } from "../../api/authAPI";
+import { IAccount } from "../../api/authAPI";
 
 interface AuthFormProps {
   type: "sign-in" | "sign-up";
 }
 
-export default function AuthForm({ type }: AuthFormProps) {
-  // Pre-fill credentials for tester on sign-in
-  const [email, setEmail] = useState(
-    type === "sign-in" ? "testuser@example.com" : ""
-  );
-  const [password, setPassword] = useState(
-    type === "sign-in" ? "Password123@" : ""
-  );
-  const [name, setName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+interface RegisterFormData
+  extends Omit<
+    IAccount,
+    "userID" | "balance" | "isBlocked" | "isDelete" | "isActive" | "favorites"
+  > {
+  pin: string;
+}
+
+interface LoginFormData {
+  identifier: string;
+  pin: string;
+}
+
+export const AuthForm = ({ type }: AuthFormProps) => {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const isRegister = type === "sign-up";
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData | LoginFormData>({
+    mode: "onBlur",
+  });
 
-    try {
-      let response: responseType | null = null;
+  const { mutate: registerUser, isPending: isRegistering } =
+    useRegisterAccount();
+  const { mutate: loginUser, isPending: isLoggingIn } = useLoginAccount();
 
-      if (type === "sign-up") {
-        const user = await signupUser({ username: name, email, password });
-        response = {
-          ...user,
-          message: "Signup successful",
-        };
-        toast.success("Welcome to MyDash!");
-      } else {
-        const user = await signinUser({ email, password });
-        response = {
-          ...user,
-          message: "Signin successful",
-        };
-        toast.success("Welcome back to MyDash!");
-      }
-
-      if (response && response._id) {
-        localStorage.setItem("userIdMydash", response._id);
-      }
-
-      navigate("/");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
-      console.error(error);
-      let errorMessage = "Error calling the auth API";
-
-      if (error.response && error.response.data) {
-        if (typeof error.response.data === "string") {
-          errorMessage = error.response.data;
-        } else if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        } else if (Array.isArray(error.response.data)) {
-          errorMessage = error.response.data.join(", ");
+  const onSubmit: SubmitHandler<RegisterFormData | LoginFormData> = (data) => {
+    if (isRegister) {
+      registerUser(data as RegisterFormData, {
+        onSuccess: (response) => {
+          localStorage.setItem("userIdmykash", response.data._id);
+          toast.success("Registration successful!");
+          navigate(response.data.role === "user" ? "/home" : "/approval");
+        },
+        onError: (error) => toast.error(error.message),
+      });
+    } else {
+      loginUser(
+        { identifier: data.identifier, pin: data.pin },
+        {
+          onSuccess: (response) => {
+            localStorage.setItem("userIdmykash", response.data._id);
+            toast.success("Login successful!");
+            navigate(response.data.role === "user" ? "/home" : "/approval");
+          },
+          onError: (error) => toast.error(error.message),
         }
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
+      );
     }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    alert(`Working on integrating ${provider} login`);
-  };
-
   return (
-    <div className="w-full max-w-md bg-gray-800/20 shadow-md rounded-lg">
-      <div className="p-6 space-y-4">
-        <div className="space-y-1">
-          <div className="flex justify-center items-center gap-1">
-            <img
-              src="/my-dash-logo.png"
-              alt="User"
-              className="w-8 h-8 rounded-full object-cover"
-            />
-            <h2 className="text-2xl font-bold text-center text-white">
-              {type === "sign-in"
-                ? "Sign in to your account"
-                : "Create an account"}
-            </h2>
-          </div>
-          <p className="text-center text-gray-400">
-            {type === "sign-in"
-              ? "Enter your email below to sign in to your account"
-              : "Enter your information below to create your account"}
-          </p>
-        </div>
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {type === "sign-up" && (
-            <div className="space-y-2">
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-200"
-              >
-                Nick Name
-              </label>
+    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+      <h2 className="text-3xl font-bold mb-8 text-center text-[#cf1263]">
+        {isRegister ? "Create Account" : "Welcome Back"}
+      </h2>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        {isRegister && (
+          <>
+            <div>
+              <label className="block text-gray-700 mb-2">Full Name</label>
               <input
-                id="name"
-                name="name"
-                maxLength={10}
-                type="text"
-                placeholder="Mursalin"
-                required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary_one focus:border-transparent"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                {...register("name", { required: "Name is required" })}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
               />
+              {errors.name && (
+                <span className="text-red-500 text-sm">
+                  {errors.name.message}
+                </span>
+              )}
             </div>
-          )}
-          <div className="space-y-2">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-200"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="mursalin@example.com"
-              required
-              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary_one focus:border-transparent"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="space-y-2 relative">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-200"
-            >
-              Password
-            </label>
-            <div className="relative">
+
+            <div>
+              <label className="block text-gray-700 mb-2">Mobile Number</label>
               <input
-                id="password"
-                name="password"
-                type={showPassword ? "text" : "password"}
-                required
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary_one focus:border-transparent pr-10"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register("mobile", {
+                  required: "Mobile is required",
+                })}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
               />
-              <button
-                type="button"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white focus:outline-none"
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <FaEyeSlash className="h-5 w-5" />
-                ) : (
-                  <FaEye className="h-5 w-5" />
-                )}
-              </button>
+              {errors.mobile && (
+                <span className="text-red-500 text-sm">
+                  {errors.mobile.message}
+                </span>
+              )}
             </div>
-          </div>
-          <button
-            type="submit"
-            className="w-full py-2 px-4 bg-primary_one hover:bg-red-700 text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-primary_one focus:ring-offset-2 focus:ring-offset-gray-800"
-            disabled={loading}
-          >
-            {loading
-              ? "Processing..."
-              : type === "sign-in"
-              ? "Sign in"
-              : "Sign up"}
-          </button>
-        </form>
-        <div className="relative hidden">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-600"></div>
-          </div>
-          <div className="relative justify-center text-xs uppercase hidden">
-            <span className="bg-gray-800 px-2 text-gray-400">
-              Or continue with
-            </span>
-          </div>
-        </div>
-        <div className="hidden">
-          <button
-            onClick={() => handleSocialLogin("Google")}
-            className="flex items-center justify-center w-full px-4 py-2 border border-gray-600 rounded-md text-gray-200 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-          >
-            <FaChrome className="mr-2 h-4 w-4" /> Google
-          </button>
-        </div>
-      </div>
-      <div className="px-6 py-4 rounded-b-lg flex flex-wrap items-center justify-between gap-2">
-        <div className="text-sm text-gray-400">
-          {type === "sign-in"
-            ? "Don't have an account? "
-            : "Already have an account? "}
-          <Link
-            to={type === "sign-in" ? "/sign-up" : "/sign-in"}
-            className="text-primary_one hover:underline"
-          >
-            {type === "sign-in" ? "Sign up" : "Sign in"}
-          </Link>
-        </div>
-        {type === "sign-in" && (
-          <Link
-            to="/forgot-password"
-            className="text-sm text-primary_one hover:underline hidden"
-          >
-            Forgot password?
-          </Link>
+
+            <div>
+              <label className="block text-gray-700 mb-2">Email Address</label>
+              <input
+                type="email"
+                {...register("email", {
+                  required: "Email is required",
+                  pattern: {
+                    value: /^\S+@\S+$/i,
+                    message: "Invalid email address",
+                  },
+                })}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+              />
+              {errors.email && (
+                <span className="text-red-500 text-sm">
+                  {errors.email.message}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-2">NID Number</label>
+              <input
+                {...register("nid", { required: "NID is required" })}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+              />
+              {errors.nid && (
+                <span className="text-red-500 text-sm">
+                  {errors.nid.message}
+                </span>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-gray-700 mb-2">Role</label>
+              <select
+                {...register("role", { required: "Role is required" })}
+                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+              >
+                <option value="user">User</option>
+                <option value="agent">Agent</option>
+              </select>
+            </div>
+          </>
         )}
-      </div>
+
+        {!isRegister && (
+          <div>
+            <label className="block text-gray-700 mb-2">Mobile/Email</label>
+            <input
+              {...register("identifier", {
+                required: "Identifier is required",
+              })}
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+            />
+            {errors.identifier && (
+              <span className="text-red-500 text-sm">
+                {errors.identifier.message}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div>
+          <label className="block text-gray-700 mb-2">PIN</label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              {...register("pin", {
+                required: "PIN is required",
+                minLength: {
+                  value: 5,
+                  message: "PIN must be 5 digits",
+                },
+                maxLength: {
+                  value: 5,
+                  message: "PIN must be 5 digits",
+                },
+              })}
+              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent pr-12"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 px-3 flex items-center"
+            >
+              {showPassword ? (
+                <FiEyeOff className="text-gray-500" />
+              ) : (
+                <FiEye className="text-gray-500" />
+              )}
+            </button>
+          </div>
+          {errors.pin && (
+            <span className="text-red-500 text-sm">{errors.pin.message}</span>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          disabled={isRegistering || isLoggingIn}
+          className="w-full bg-[#cf1263] text-white p-3 rounded-lg hover:bg-[#b01050] transition-colors disabled:opacity-50"
+        >
+          {isRegistering || isLoggingIn
+            ? "Processing..."
+            : isRegister
+            ? "Register"
+            : "Login"}
+        </button>
+      </form>
     </div>
   );
-}
+};

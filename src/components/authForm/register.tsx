@@ -1,8 +1,8 @@
-import AuthForm from "./auth-form";
-import "./auth.css";
+import { AuthForm } from "./auth-form";
+
 export default function SignUp() {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 container-ani-bg ">
+    <div className="min-h-screen flex items-center justify-center p-4  ">
       <div className="z-20">
         <AuthForm type="sign-up" />
       </div>

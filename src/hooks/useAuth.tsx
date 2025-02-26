@@ -1,30 +1,35 @@
-import { useQuery } from "@tanstack/react-query";
-import { getUserById } from "../lib/authApi";
+import { useGetUser } from "../api/adminAPI";
 
-const useAuth = () => {
-  // Get userId from localStorage
-  const userId = localStorage.getItem("userIdMydash");
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+}
 
-  const { data, error, isLoading, refetch } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => (userId ? getUserById(userId) : Promise.resolve(null)),
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
-    enabled: !!userId, // Only enable the query if userId exists
-  });
+interface UseAuthReturn {
+  user: User | null;
+  error: Error | null;
+  isLoading: boolean;
+  refetch: () => void;
+}
 
-  // Extract only the necessary fields
-  const user = data?.data
+const useAuth = (): UseAuthReturn => {
+  // Get userId from localStorage; note that this may return null
+  const userId: string | null = localStorage.getItem("userIdmykash");
+
+  // Pass a fallback empty string if userId is null; the hook's enabled flag will prevent unnecessary queries
+  const { data, error, isLoading, refetch } = useGetUser(userId ?? "");
+
+  // Extract only the necessary fields from the API response
+  const user: User | null = data?.data
     ? {
         _id: data.data._id,
-        username: data.data.username,
+        username: data.data.name,
         email: data.data.email,
       }
     : null;
 
-  return { user, error, isLoading, refetch };
+  return { user, error: error ?? null, isLoading, refetch };
 };
 
 export default useAuth;
