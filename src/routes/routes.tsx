@@ -1,10 +1,12 @@
 import App from "../App";
 import SignIn from "../components/authForm/login";
 import SignUp from "../components/authForm/register";
+import AdminHomePage from "../pages/admin/AdminHomePage";
 import History from "../pages/History";
 import Home from "../pages/Home";
 
 import PendingApproval from "../pages/PendingApproval";
+import AdminRoute from "./AdminRoute";
 import PrivateRoute from "./PrivateRoute";
 import { createBrowserRouter } from "react-router-dom";
 const router = createBrowserRouter([
@@ -33,8 +35,17 @@ const router = createBrowserRouter([
           </PrivateRoute>
         ),
       },
+      {
+        path: "/admin/home",
+        element: (
+          <AdminRoute>
+            <AdminHomePage />
+          </AdminRoute>
+        ),
+      },
     ],
   },
+
   {
     path: "/login",
     element: <SignIn />,
