@@ -9,6 +9,7 @@ import {
   IAccount,
 } from "../../api/authAPI";
 import { useGetUser } from "../../api/adminAPI";
+import useAuth from "../../hooks/useAuth";
 
 interface AuthFormProps {
   type: "sign-in" | "sign-up";
@@ -35,6 +36,7 @@ interface LoginFormData {
 }
 
 export const AuthForm = ({ type }: AuthFormProps) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const isRegister = type === "sign-up";
@@ -84,10 +86,10 @@ export const AuthForm = ({ type }: AuthFormProps) => {
       {
         onSuccess: (response) => {
           localStorage.setItem("userIdmykash", response.data.userID);
-          if (response.data.role === "agent") {
-            // Set the agent id to trigger useGetUser hook.
-            // For now, we use a hardcoded value. Later, connect with your auth hook.
-            setAgentId("U1740496558131");
+          if (response.data.role === "admin") {
+            navigate("/admin/home");
+          } else if (response.data.role === "agent") {
+            setAgentId(user?.userID as string);
           } else {
             toast.success("Login successful!");
             navigate("/home");
