@@ -1,23 +1,17 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import useAuth from "../hooks/useAuth"; // Make sure the correct path is used
+import useAuth from "../hooks/useAuth";
 import Loader from "../components/UI/Loader/Loader";
 
 interface PrivateRouteProps {
   children: ReactNode;
 }
 
-const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const { user, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <Loader />; // Optional: Show a loading indicator while checking auth
-  }
-
-  if (!user) {
-    return <Navigate to="/sign-in" replace />;
-  }
-
+  console.log(user);
+  if (isLoading) return <Loader />;
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 };
 

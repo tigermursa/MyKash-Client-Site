@@ -1,5 +1,5 @@
 import { useForm, SubmitHandler } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
@@ -13,7 +13,14 @@ interface AuthFormProps {
 interface RegisterFormData
   extends Omit<
     IAccount,
-    "userID" | "balance" | "isBlocked" | "isDelete" | "isActive" | "favorites"
+    | "userID"
+    | "balance"
+    | "isBlocked"
+    | "isDelete"
+    | "isActive"
+    | "favorites"
+    | "createdAt"
+    | "updatedAt"
   > {
   pin: string;
 }
@@ -27,161 +34,185 @@ export const AuthForm = ({ type }: AuthFormProps) => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const isRegister = type === "sign-up";
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterFormData | LoginFormData>({
-    mode: "onBlur",
-  });
-
+  const registerMethods = useForm<RegisterFormData>({ mode: "onBlur" });
+  const loginMethods = useForm<LoginFormData>({ mode: "onBlur" });
   const { mutate: registerUser, isPending: isRegistering } =
     useRegisterAccount();
   const { mutate: loginUser, isPending: isLoggingIn } = useLoginAccount();
 
-  const onSubmit: SubmitHandler<RegisterFormData | LoginFormData> = (data) => {
-    if (isRegister) {
-      registerUser(data as RegisterFormData, {
+  const onSubmitRegister: SubmitHandler<RegisterFormData> = (data) => {
+    registerUser(data, {
+      onSuccess: (response) => {
+        localStorage.setItem("userIdmykash", response.data.userID);
+        toast.success("Registration successful!");
+        navigate(response.data.role === "user" ? "/home" : "/approval");
+      },
+      onError: (error: Error) => toast.error(error.message),
+    });
+  };
+
+  const onSubmitLogin: SubmitHandler<LoginFormData> = (data) => {
+    loginUser(
+      { identifier: data.identifier, pin: data.pin },
+      {
         onSuccess: (response) => {
-          localStorage.setItem("userIdmykash", response.data._id);
-          toast.success("Registration successful!");
+          localStorage.setItem("userIdmykash", response.data.userID);
+          toast.success("Login successful!");
           navigate(response.data.role === "user" ? "/home" : "/approval");
         },
-        onError: (error) => toast.error(error.message),
-      });
-    } else {
-      loginUser(
-        { identifier: data.identifier, pin: data.pin },
-        {
-          onSuccess: (response) => {
-            localStorage.setItem("userIdmykash", response.data._id);
-            toast.success("Login successful!");
-            navigate(response.data.role === "user" ? "/home" : "/approval");
-          },
-          onError: (error) => toast.error(error.message),
-        }
-      );
-    }
+        onError: (error: Error) => toast.error(error.message),
+      }
+    );
   };
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md mx-auto my-8">
       <h2 className="text-3xl font-bold mb-8 text-center text-[#cf1263]">
         {isRegister ? "Create Account" : "Welcome Back"}
       </h2>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {isRegister && (
+      <form
+        onSubmit={
+          isRegister
+            ? registerMethods.handleSubmit(onSubmitRegister)
+            : loginMethods.handleSubmit(onSubmitLogin)
+        }
+        className="space-y-6"
+      >
+        {isRegister ? (
           <>
-            <div>
-              <label className="block text-gray-700 mb-2">Full Name</label>
-              <input
-                {...register("name", { required: "Name is required" })}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
-              />
-              {errors.name && (
-                <span className="text-red-500 text-sm">
-                  {errors.name.message}
-                </span>
-              )}
+            {/* Row 1: Full Name & Mobile Number */}
+            <div className="flex flex-col md:flex-row md:space-x-4">
+              <div className="flex-1">
+                <label className="block text-gray-700 mb-2">Full Name</label>
+                <input
+                  {...registerMethods.register("name", {
+                    required: "Name is required",
+                  })}
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                />
+                <div className="min-h-[1.5rem]">
+                  {registerMethods.formState.errors.name && (
+                    <span className="text-red-500 text-sm">
+                      {registerMethods.formState.errors.name.message}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 mt-4 md:mt-0">
+                <label className="block text-gray-700 mb-2">
+                  Mobile Number
+                </label>
+                <input
+                  {...registerMethods.register("mobile", {
+                    required: "Mobile is required",
+                  })}
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                />
+                <div className="min-h-[1.5rem]">
+                  {registerMethods.formState.errors.mobile && (
+                    <span className="text-red-500 text-sm">
+                      {registerMethods.formState.errors.mobile.message}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-gray-700 mb-2">Mobile Number</label>
-              <input
-                {...register("mobile", {
-                  required: "Mobile is required",
-                })}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
-              />
-              {errors.mobile && (
-                <span className="text-red-500 text-sm">
-                  {errors.mobile.message}
-                </span>
-              )}
+            {/* Row 2: Email Address & NID Number */}
+            <div className="flex flex-col md:flex-row md:space-x-4">
+              <div className="flex-1">
+                <label className="block text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  {...registerMethods.register("email", {
+                    required: "Email is required",
+                    pattern: {
+                      value: /^\S+@\S+$/i,
+                      message: "Invalid email address",
+                    },
+                  })}
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                />
+                <div className="min-h-[1.5rem]">
+                  {registerMethods.formState.errors.email && (
+                    <span className="text-red-500 text-sm">
+                      {registerMethods.formState.errors.email.message}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 mt-4 md:mt-0">
+                <label className="block text-gray-700 mb-2">NID Number</label>
+                <input
+                  {...registerMethods.register("nid", {
+                    required: "NID is required",
+                  })}
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                />
+                <div className="min-h-[1.5rem]">
+                  {registerMethods.formState.errors.nid && (
+                    <span className="text-red-500 text-sm">
+                      {registerMethods.formState.errors.nid.message}
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-gray-700 mb-2">Email Address</label>
-              <input
-                type="email"
-                {...register("email", {
-                  required: "Email is required",
-                  pattern: {
-                    value: /^\S+@\S+$/i,
-                    message: "Invalid email address",
-                  },
-                })}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
-              />
-              {errors.email && (
-                <span className="text-red-500 text-sm">
-                  {errors.email.message}
-                </span>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-gray-700 mb-2">NID Number</label>
-              <input
-                {...register("nid", { required: "NID is required" })}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
-              />
-              {errors.nid && (
-                <span className="text-red-500 text-sm">
-                  {errors.nid.message}
-                </span>
-              )}
-            </div>
-
+            {/* Row 3: Role */}
             <div>
               <label className="block text-gray-700 mb-2">Role</label>
               <select
-                {...register("role", { required: "Role is required" })}
-                className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                {...registerMethods.register("role", {
+                  required: "Role is required",
+                })}
+                className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
               >
                 <option value="user">User</option>
                 <option value="agent">Agent</option>
               </select>
+              <div className="min-h-[1.5rem]"></div>
             </div>
           </>
-        )}
-
-        {!isRegister && (
+        ) : (
           <div>
             <label className="block text-gray-700 mb-2">Mobile/Email</label>
             <input
-              {...register("identifier", {
+              {...loginMethods.register("identifier", {
                 required: "Identifier is required",
               })}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+              className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
             />
-            {errors.identifier && (
-              <span className="text-red-500 text-sm">
-                {errors.identifier.message}
-              </span>
-            )}
+            <div className="min-h-[1.5rem]">
+              {loginMethods.formState.errors.identifier && (
+                <span className="text-red-500 text-sm">
+                  {loginMethods.formState.errors.identifier.message}
+                </span>
+              )}
+            </div>
           </div>
         )}
 
+        {/* PIN Field */}
         <div>
           <label className="block text-gray-700 mb-2">PIN</label>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
-              {...register("pin", {
-                required: "PIN is required",
-                minLength: {
-                  value: 5,
-                  message: "PIN must be 5 digits",
-                },
-                maxLength: {
-                  value: 5,
-                  message: "PIN must be 5 digits",
-                },
-              })}
-              className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent pr-12"
+              {...(isRegister
+                ? registerMethods.register("pin", {
+                    required: "PIN is required",
+                    minLength: { value: 5, message: "PIN must be 5 digits" },
+                    maxLength: { value: 5, message: "PIN must be 5 digits" },
+                  })
+                : loginMethods.register("pin", {
+                    required: "PIN is required",
+                    minLength: { value: 5, message: "PIN must be 5 digits" },
+                    maxLength: { value: 5, message: "PIN must be 5 digits" },
+                  }))}
+              className="w-full h-12 px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
             />
             <button
               type="button"
@@ -195,23 +226,59 @@ export const AuthForm = ({ type }: AuthFormProps) => {
               )}
             </button>
           </div>
-          {errors.pin && (
-            <span className="text-red-500 text-sm">{errors.pin.message}</span>
-          )}
+          <div className="min-h-[1.5rem]">
+            {isRegister
+              ? registerMethods.formState.errors.pin && (
+                  <span className="text-red-500 text-sm">
+                    {registerMethods.formState.errors.pin.message}
+                  </span>
+                )
+              : loginMethods.formState.errors.pin && (
+                  <span className="text-red-500 text-sm">
+                    {loginMethods.formState.errors.pin.message}
+                  </span>
+                )}
+          </div>
         </div>
 
         <button
           type="submit"
-          disabled={isRegistering || isLoggingIn}
-          className="w-full bg-[#cf1263] text-white p-3 rounded-lg hover:bg-[#b01050] transition-colors disabled:opacity-50"
+          disabled={isRegister ? isRegistering : isLoggingIn}
+          className="w-full h-12 bg-[#cf1263] text-white rounded-lg hover:bg-[#b01050] transition-colors disabled:opacity-50 flex items-center justify-center"
         >
-          {isRegistering || isLoggingIn
+          {isRegister
+            ? isRegistering
+              ? "Processing..."
+              : "Register"
+            : isLoggingIn
             ? "Processing..."
-            : isRegister
-            ? "Register"
             : "Login"}
         </button>
       </form>
+
+      <div className="mt-4 text-center">
+        {isRegister ? (
+          <p className="text-gray-600">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="font-bold text-[#cf1263] hover:underline"
+            >
+              Login
+            </Link>
+          </p>
+        ) : (
+          <p className="text-gray-600">
+            Don't have an account?{" "}
+            <Link
+              to="/register"
+              className="font-bold text-[#cf1263] hover:underline"
+            >
+              Register
+            </Link>
+          </p>
+        )}
+      </div>
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import App from "../App";
 import SignIn from "../components/authForm/login";
 import SignUp from "../components/authForm/register";
+import Home from "../pages/Home";
+import PendingApproval from "../pages/PendingApproval";
 import PrivateRoute from "./PrivateRoute";
 import { createBrowserRouter } from "react-router-dom";
 const router = createBrowserRouter([
@@ -14,7 +16,12 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <div>I am nothing</div>,
+        path: "/home",
+        element: (
+          <div>
+            <Home />
+          </div>
+        ),
       },
     ],
   },
@@ -25,6 +32,10 @@ const router = createBrowserRouter([
   {
     path: "/register",
     element: <SignUp />,
+  },
+  {
+    path: "/approval",
+    element: <PendingApproval />,
   },
   {
     path: "/*",
