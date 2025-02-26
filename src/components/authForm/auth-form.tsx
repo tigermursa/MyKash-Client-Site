@@ -1,10 +1,14 @@
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { useRegisterAccount, useLoginAccount } from "../../api/authAPI";
-import { IAccount } from "../../api/authAPI";
+import {
+  useRegisterAccount,
+  useLoginAccount,
+  IAccount,
+} from "../../api/authAPI";
+import { useGetUser } from "../../api/adminAPI";
 
 interface AuthFormProps {
   type: "sign-in" | "sign-up";
@@ -34,17 +38,40 @@ export const AuthForm = ({ type }: AuthFormProps) => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const isRegister = type === "sign-up";
+
   const registerMethods = useForm<RegisterFormData>({ mode: "onBlur" });
   const loginMethods = useForm<LoginFormData>({ mode: "onBlur" });
   const { mutate: registerUser, isPending: isRegistering } =
     useRegisterAccount();
   const { mutate: loginUser, isPending: isLoggingIn } = useLoginAccount();
 
+  // For agents: we'll use this state to trigger the useGetUser hook
+  const [agentId, setAgentId] = useState<string | null>(null);
+
+  // This hook will only run when agentId is set (non-null)
+  const { data: agentData, isLoading: agentLoading } = useGetUser(
+    agentId || ""
+  );
+
+  // Once agent data is available, check active status and navigate accordingly.
+  useEffect(() => {
+    if (agentId && agentData) {
+      if (agentData.data.isActive) {
+        toast.success("Login successful!");
+        navigate("/home");
+      } else {
+        toast.info("Your account is pending approval.");
+        navigate("/approval");
+      }
+    }
+  }, [agentData, agentId, navigate]);
+
   const onSubmitRegister: SubmitHandler<RegisterFormData> = (data) => {
     registerUser(data, {
       onSuccess: (response) => {
         localStorage.setItem("userIdmykash", response.data.userID);
         toast.success("Registration successful!");
+        // For agents navigate to approval, for users to home
         navigate(response.data.role === "user" ? "/home" : "/approval");
       },
       onError: (error: Error) => toast.error(error.message),
@@ -57,8 +84,14 @@ export const AuthForm = ({ type }: AuthFormProps) => {
       {
         onSuccess: (response) => {
           localStorage.setItem("userIdmykash", response.data.userID);
-          toast.success("Login successful!");
-          navigate(response.data.role === "user" ? "/home" : "/approval");
+          if (response.data.role === "agent") {
+            // Set the agent id to trigger useGetUser hook.
+            // For now, we use a hardcoded value. Later, connect with your auth hook.
+            setAgentId("U1740496558131");
+          } else {
+            toast.success("Login successful!");
+            navigate("/home");
+          }
         },
         onError: (error: Error) => toast.error(error.message),
       }
@@ -243,14 +276,18 @@ export const AuthForm = ({ type }: AuthFormProps) => {
 
         <button
           type="submit"
-          disabled={isRegister ? isRegistering : isLoggingIn}
+          disabled={
+            isRegister
+              ? isRegistering
+              : isLoggingIn || (agentLoading && agentId !== null)
+          }
           className="w-full h-12 bg-[#cf1263] text-white rounded-lg hover:bg-[#b01050] transition-colors disabled:opacity-50 flex items-center justify-center"
         >
           {isRegister
             ? isRegistering
               ? "Processing..."
               : "Register"
-            : isLoggingIn
+            : isLoggingIn || (agentLoading && agentId !== null)
             ? "Processing..."
             : "Login"}
         </button>

@@ -1,7 +1,9 @@
 import App from "../App";
 import SignIn from "../components/authForm/login";
 import SignUp from "../components/authForm/register";
+import History from "../pages/History";
 import Home from "../pages/Home";
+
 import PendingApproval from "../pages/PendingApproval";
 import PrivateRoute from "./PrivateRoute";
 import { createBrowserRouter } from "react-router-dom";
@@ -18,9 +20,17 @@ const router = createBrowserRouter([
         index: true,
         path: "/home",
         element: (
-          <div>
-            <Home />
-          </div>
+          <PrivateRoute>
+            <Home />,
+          </PrivateRoute>
+        ),
+      },
+      {
+        path: "/history",
+        element: (
+          <PrivateRoute>
+            <History />,
+          </PrivateRoute>
         ),
       },
     ],
@@ -36,6 +46,10 @@ const router = createBrowserRouter([
   {
     path: "/approval",
     element: <PendingApproval />,
+  },
+  {
+    path: "/history",
+    element: <History />,
   },
   {
     path: "/*",

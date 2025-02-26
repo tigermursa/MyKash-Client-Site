@@ -9,7 +9,6 @@ interface PrivateRouteProps {
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const { user, isLoading } = useAuth();
-  console.log(user);
   if (isLoading) return <Loader />;
   if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;

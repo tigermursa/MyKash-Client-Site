@@ -51,6 +51,7 @@ export interface ITransaction {
 }
 
 export interface IAuthResponse<T> {
+  isActive: boolean;
   success: boolean;
   message: string;
   data: T;
