@@ -1,33 +1,37 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
-import { FaUserCircle } from "react-icons/fa";
-import { PiNavigationArrow } from "react-icons/pi";
-import { SiAidungeon, SiAmeba } from "react-icons/si";
+import { Icon } from "@iconify/react";
+import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import useAuth from "../../hooks/useAuth";
 import { useSendMoney, useCashOut, useCashIn } from "../../api/transactionAPI";
 import { useGetAllUsers } from "../../api/adminAPI";
+import { useCreateBalanceRequest } from "../../api/balanceRequestAPI";
 
-// A simple Modal component – you can replace this with your own modal implementation or a UI library component.
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
 }
+
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-      <div className="bg-white rounded p-4 w-11/12 max-w-md">
-        <button className="text-red-500 float-right" onClick={onClose}>
-          Close
+      <div className="bg-white rounded p-6 w-11/12 max-w-md">
+        <button
+          className="text-red-500 float-right text-lg font-bold"
+          onClick={onClose}
+        >
+          &times;
         </button>
-        <div className="clear-both">{children}</div>
+        <div className="clear-both mt-4">{children}</div>
       </div>
     </div>
   );
 };
 
-type ServiceType = "sendMoney" | "cashOut" | "cashIn";
+type ServiceType = "sendMoney" | "cashOut" | "cashIn" | "balanceRequest";
 
 const Services: React.FC = () => {
   const { user } = useAuth();
@@ -36,55 +40,54 @@ const Services: React.FC = () => {
   const [amount, setAmount] = useState<number>(0);
   const [pin, setPin] = useState<string>("");
 
-  // Get all users data
+  // Fetch all users (used for Send Money, Cash Out, Cash In)
   const { data: usersData, isLoading } = useGetAllUsers();
 
-  // Mutations for each transaction type
+  // Transaction mutations
   const sendMoneyMutation = useSendMoney();
   const cashOutMutation = useCashOut();
   const cashInMutation = useCashIn();
+  // Hook for creating a balance request (used by agents)
+  const createBalanceRequestMutation = useCreateBalanceRequest();
 
-  // Determine which list to show based on active service
+  // For services that need to select a target user
   let listToShow: any[] = [];
-  if (activeService && usersData) {
-    if (activeService === "sendMoney") {
-      // Only show users with role "user" and exclude the logged in user
-      listToShow = usersData.data.users.filter(
-        (u: any) => u.role === "user" && u._id !== user._id
-      );
-    } else if (activeService === "cashOut") {
-      // For cash out, list all agents
-      listToShow = usersData.data.users.filter((u: any) => u.role === "agent");
-    } else if (activeService === "cashIn") {
-      // For cash in, list all users (since agent sends cash in for a user)
-      listToShow = usersData.data.users.filter((u: any) => u.role === "user");
-    }
+  if (
+    activeService &&
+    usersData?.data?.users &&
+    activeService !== "balanceRequest"
+  ) {
+    listToShow = usersData.data.users.filter((u: any) => {
+      if (activeService === "sendMoney") {
+        return u.role === "user" && u._id !== user?._id;
+      }
+      // For cashOut and cashIn, use role-specific filtering
+      return u.role === (activeService === "cashOut" ? "agent" : "user");
+    });
   }
 
-  // Called when a service card is clicked.
   const handleServiceClick = (service: ServiceType) => {
-    // Reset any previous selections and inputs.
-    setSelectedTarget(null);
+    setActiveService(service);
+    if (service !== "balanceRequest") {
+      setSelectedTarget(null);
+    }
     setAmount(0);
     setPin("");
-    setActiveService(service);
   };
 
-  // Called when a user/agent is selected from the list.
   const handleTargetSelect = (target: any) => {
     setSelectedTarget(target);
   };
 
-  // Handle form submission
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTarget) {
-      toast.error("Please select a target user/agent.");
-      return;
-    }
     if (activeService === "sendMoney") {
+      if (!selectedTarget) {
+        toast.error("Please select a target user.");
+        return;
+      }
       const payload = {
-        senderId: user._id,
+        senderId: user!._id,
         receiverId: selectedTarget._id,
         amount,
         isFavoriteTransfer: false,
@@ -92,18 +95,17 @@ const Services: React.FC = () => {
       sendMoneyMutation.mutate(payload, {
         onSuccess: (res) => {
           toast.success(res.message);
-          // Reset the form and close the modal
           setActiveService(null);
-          setSelectedTarget(null);
-          setAmount(0);
         },
-        onError: (error: any) => {
-          toast.error(error.message);
-        },
+        onError: (error: any) => toast.error(error.message),
       });
     } else if (activeService === "cashOut") {
+      if (!selectedTarget) {
+        toast.error("Please select an agent.");
+        return;
+      }
       const payload = {
-        userId: user._id,
+        userId: user!._id,
         agentId: selectedTarget._id,
         amount,
         userPin: pin,
@@ -112,17 +114,16 @@ const Services: React.FC = () => {
         onSuccess: (res) => {
           toast.success(res.message);
           setActiveService(null);
-          setSelectedTarget(null);
-          setAmount(0);
-          setPin("");
         },
-        onError: (error: any) => {
-          toast.error(error.message);
-        },
+        onError: (error: any) => toast.error(error.message),
       });
     } else if (activeService === "cashIn") {
+      if (!selectedTarget) {
+        toast.error("Please select a target user.");
+        return;
+      }
       const payload = {
-        agentId: user._id,
+        agentId: user!._id,
         userId: selectedTarget._id,
         amount,
         agentPin: pin,
@@ -131,51 +132,89 @@ const Services: React.FC = () => {
         onSuccess: (res) => {
           toast.success(res.message);
           setActiveService(null);
-          setSelectedTarget(null);
-          setAmount(0);
-          setPin("");
         },
-        onError: (error: any) => {
-          toast.error(error.message);
+        onError: (error: any) => toast.error(error.message),
+      });
+    } else if (activeService === "balanceRequest") {
+      const payload = {
+        userId: user!._id,
+        amount,
+      };
+      createBalanceRequestMutation.mutate(payload, {
+        onSuccess: (res) => {
+          toast.success(res.message);
+          setActiveService(null);
         },
+        onError: (error: any) => toast.error(error.message),
       });
     }
   };
 
+  // A reusable service card design
+  const ServiceCard: React.FC<{
+    label: string;
+    icon: string;
+    onClick?: () => void;
+  }> = ({ label, icon, onClick }) => (
+    <div
+      onClick={onClick}
+      className="group cursor-pointer flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow transition transform hover:scale-105 hover:shadow-xl"
+    >
+      <Icon
+        icon={icon}
+        width="48"
+        className="text-indigo-600 group-hover:text-indigo-800"
+      />
+      <p className="mt-3 text-lg font-semibold text-gray-800">{label}</p>
+    </div>
+  );
+
   return (
     <div className="p-4">
-      {/* Grid of service cards */}
-      <div className="grid grid-cols-3 gap-4">
-        {user.role === "user" && (
+      {/* Service Cards Grid */}
+      <div className="grid grid-cols-3 gap-6">
+        {user!.role === "user" && (
           <>
-            <div
-              className="service-card flex flex-col items-center justify-center cursor-pointer border p-4 rounded shadow hover:bg-gray-100"
+            <ServiceCard
+              label="Send Money"
+              icon="mdi:send"
               onClick={() => handleServiceClick("sendMoney")}
-            >
-              <FaUserCircle size={40} />
-              <p className="mt-2">Send Money</p>
-            </div>
-            <div
-              className="service-card flex flex-col items-center justify-center cursor-pointer border p-4 rounded shadow hover:bg-gray-100"
+            />
+            <ServiceCard
+              label="Cash Out"
+              icon="mdi:cash-refund"
               onClick={() => handleServiceClick("cashOut")}
-            >
-              <SiAmeba size={40} />
-              <p className="mt-2">Cash Out</p>
-            </div>
+            />
           </>
         )}
-        {user.role === "agent" && (
-          <div
-            className="service-card flex flex-col items-center justify-center cursor-pointer border p-4 rounded shadow hover:bg-gray-100"
-            onClick={() => handleServiceClick("cashIn")}
-          >
-            <SiAidungeon size={40} />
-            <p className="mt-2">Cash In</p>
-          </div>
+        {user!.role === "agent" && (
+          <>
+            <ServiceCard
+              label="Cash In"
+              icon="mdi:cash-plus"
+              onClick={() => handleServiceClick("cashIn")}
+            />
+            <ServiceCard
+              label="Balance Request"
+              icon="mdi:wallet-plus"
+              onClick={() => handleServiceClick("balanceRequest")}
+            />
+          </>
         )}
+        {/* History card for all roles */}
+        <Link to="/history">
+          <div className="group cursor-pointer flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow transition transform hover:scale-105 hover:shadow-xl">
+            <Icon
+              icon="mdi:history"
+              width="48"
+              className="text-indigo-600 group-hover:text-indigo-800"
+            />
+            <p className="mt-3 text-lg font-semibold text-gray-800">History</p>
+          </div>
+        </Link>
       </div>
 
-      {/* Modal for performing a transaction */}
+      {/* Modal for Service Actions */}
       <Modal
         isOpen={activeService !== null}
         onClose={() => {
@@ -184,30 +223,43 @@ const Services: React.FC = () => {
         }}
       >
         <h2 className="text-xl font-bold mb-4">
-          {activeService === "sendMoney"
-            ? "Send Money"
-            : activeService === "cashOut"
-            ? "Cash Out"
-            : "Cash In"}
+          {activeService === "sendMoney" && "Send Money"}
+          {activeService === "cashOut" && "Cash Out"}
+          {activeService === "cashIn" && "Cash In"}
+          {activeService === "balanceRequest" && "Balance Request"}
         </h2>
         {isLoading ? (
           <p>Loading users...</p>
+        ) : activeService === "balanceRequest" ? (
+          // For balance request, no target selection is needed.
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block mb-1 font-medium">Amount:</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(parseFloat(e.target.value))}
+                className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
+                required
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
+            >
+              <span>Request Balance</span>
+            </button>
+          </form>
         ) : (
           <>
-            {!selectedTarget && (
+            {!selectedTarget ? (
               <div>
-                <p className="mb-2">
-                  Select {activeService === "cashOut" ? "Agent" : "User"}:
-                </p>
+                <p className="mb-2 font-medium">Select a user:</p>
                 <ul className="max-h-48 overflow-y-auto border rounded">
-                  {listToShow.map((target) => (
+                  {listToShow.map((target: any) => (
                     <li
                       key={target._id}
-                      className={`p-2 cursor-pointer hover:bg-gray-200 ${
-                        selectedTarget && selectedTarget._id === target._id
-                          ? "bg-gray-300"
-                          : ""
-                      }`}
+                      className="p-2 cursor-pointer hover:bg-gray-200"
                       onClick={() => handleTargetSelect(target)}
                     >
                       {target.name}
@@ -215,27 +267,26 @@ const Services: React.FC = () => {
                   ))}
                 </ul>
               </div>
-            )}
-            {selectedTarget && (
+            ) : (
               <div className="mt-4">
-                <p className="mb-2">
-                  Send money to: <strong>{selectedTarget.name}</strong>
+                <p className="mb-2 font-medium">
+                  Target: <strong>{selectedTarget.name}</strong>
                 </p>
                 <form onSubmit={handleSubmit}>
                   <div className="mb-4">
-                    <label className="block mb-1">Amount:</label>
+                    <label className="block mb-1 font-medium">Amount:</label>
                     <input
                       type="number"
                       value={amount}
                       onChange={(e) => setAmount(parseFloat(e.target.value))}
-                      className="w-full border p-2 rounded"
+                      className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
                       required
                     />
                   </div>
                   {(activeService === "cashOut" ||
                     activeService === "cashIn") && (
                     <div className="mb-4">
-                      <label className="block mb-1">
+                      <label className="block mb-1 font-medium">
                         {activeService === "cashOut"
                           ? "User Pin:"
                           : "Agent Pin:"}
@@ -244,17 +295,24 @@ const Services: React.FC = () => {
                         type="password"
                         value={pin}
                         onChange={(e) => setPin(e.target.value)}
-                        className="w-full border p-2 rounded"
+                        className="w-full border p-2 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
                         required
                       />
                     </div>
                   )}
                   <button
                     type="submit"
-                    className="flex items-center bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                    className="w-full flex items-center justify-center bg-black text-white px-4 py-2 rounded hover:bg-gray-800"
                   >
-                    <span>Send</span>
-                    <PiNavigationArrow size={20} className="ml-2" />
+                    <span>
+                      {activeService === "sendMoney"
+                        ? "Send Money"
+                        : activeService === "cashOut"
+                        ? "Cash Out"
+                        : activeService === "cashIn"
+                        ? "Cash In"
+                        : "Request Balance"}
+                    </span>
                   </button>
                 </form>
               </div>

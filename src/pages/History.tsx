@@ -9,21 +9,24 @@ interface Transaction {
   amount: number;
   createdAt: string;
   updatedAt: string;
-  fromAccount?: {
+  fromAccount: {
+    _id: string;
+    userID: string;
     name: string;
-    accountId: string;
   };
-  toAccount?: {
+  toAccount: {
+    _id: string;
+    userID: string;
     name: string;
-    accountId: string;
   };
   fee: number;
-  transactionType: "transfer" | "payment" | "deposit";
+  transactionType: "sendMoney" | "cashOut";
 }
 
 const History: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
-  const loggedInUserId = user?._id;
+  // Use user.userID for comparison
+  const loggedInUserId = user?.userID;
   const userID = user?.userID;
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
 
@@ -33,18 +36,45 @@ const History: React.FC = () => {
     isLoading: historyLoading,
   } = useGetHistory(userID as string);
 
-  const transactions: Transaction[] = data?.data || [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const transactions: Transaction[] = (data?.data || []).map((tx: any) => ({
+    transactionId: tx.transactionId,
+    amount: tx.amount,
+    createdAt: tx.createdAt,
+    updatedAt: tx.updatedAt,
+    fee: tx.fee,
+    transactionType: tx.transactionType,
+    fromAccount: tx.fromAccount
+      ? {
+          _id: tx.fromAccount._id || "N/A",
+          userID: tx.fromAccount.userID,
+          name: tx.fromAccount.name,
+        }
+      : { _id: "N/A", userID: "N/A", name: "N/A" },
+    toAccount: tx.toAccount
+      ? {
+          _id: tx.toAccount._id || "N/A",
+          userID: tx.toAccount.userID,
+          name: tx.toAccount.name,
+        }
+      : { _id: "N/A", userID: "N/A", name: "N/A" },
+  }));
+
   const selectedTransaction = transactions.find(
     (tx) => tx.transactionId === selectedTxId
   );
 
-  // Helper: determine if a transaction is incoming (logged in user is receiver)
+  // Determine if the transaction is incoming:
+  // For "sendMoney", if the logged in user is the receiver (toAccount), it's incoming.
   const isIncoming = (tx: Transaction) =>
-    loggedInUserId === tx.toAccount?.accountId;
-  // Arrow icon: right for incoming, left for outgoing
+    loggedInUserId === tx.toAccount.userID &&
+    tx.transactionType === "sendMoney";
+
+  // Get icon: plus for incoming, minus for outgoing.
   const getArrowIcon = (tx: Transaction) =>
-    isIncoming(tx) ? "mdi:arrow-right-bold" : "mdi:arrow-left-bold";
-  // Amount styling and sign based on transaction direction
+    isIncoming(tx) ? "mdi:plus-circle" : "mdi:minus-circle";
+
+  // Set the amount styling and sign based on the transaction direction.
   const getAmountProps = (tx: Transaction) => {
     const incoming = isIncoming(tx);
     return {
@@ -52,17 +82,19 @@ const History: React.FC = () => {
       sign: incoming ? "+" : "-",
     };
   };
-  // Get counterpart account details based on transaction direction
+
+  // Get counterpart account details based on transaction direction.
+  // If incoming, show the "From" account; otherwise, the "To" account.
   const getCounterpart = (tx: Transaction) => {
     if (isIncoming(tx)) {
       return {
         label: "From",
-        name: tx.fromAccount?.name || "Unknown",
+        name: tx.fromAccount.name || "Unknown",
       };
     }
     return {
       label: "To",
-      name: tx.toAccount?.name || "Unknown",
+      name: tx.toAccount.name || "Unknown",
     };
   };
 
@@ -192,12 +224,12 @@ const History: React.FC = () => {
               <DetailItem
                 icon="mdi:account"
                 label="From Account"
-                value={selectedTransaction.fromAccount?.name || "N/A"}
+                value={selectedTransaction.fromAccount.name}
               />
               <DetailItem
                 icon="mdi:account"
                 label="To Account"
-                value={selectedTransaction.toAccount?.name || "N/A"}
+                value={selectedTransaction.toAccount.name}
               />
               <div className="grid grid-cols-2 gap-4">
                 <DetailItem

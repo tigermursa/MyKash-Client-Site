@@ -2,7 +2,7 @@ import Services from "../components/services/Services";
 
 const Home = () => {
   return (
-    <div className="bg-[#cf1263] h-screen">
+    <div className=" h-screen">
       <Services />
     </div>
   );

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
-import { Link } from "react-router-dom";
 
 import {
   useGetTotalBalance,
@@ -11,14 +10,20 @@ import {
   useApproveAgent,
   IAccount,
 } from "../../api/adminAPI";
+import {
+  useGetPendingBalanceRequests,
+  useApproveBalanceRequest,
+  IBalanceRequest,
+} from "../../api/balanceRequestAPI";
 import Loader from "../../components/UI/Loader/Loader";
 import useAuth from "../../hooks/useAuth";
+import { toast } from "react-toastify";
 
 const AdminHomePage: React.FC = () => {
   const { user } = useAuth();
   const adminBalance = user?.balance;
 
-  // Fetch overall balances
+  // Overall balances
   const {
     data: totalBalanceData,
     isLoading: totalBalanceLoading,
@@ -34,35 +39,49 @@ const AdminHomePage: React.FC = () => {
     isLoading: totalAgentBalanceLoading,
     error: totalAgentBalanceError,
   } = useGetTotalAgentBalance();
-  // Fetch all users
+
+  // All users and statistics
   const {
     data: allUsersData,
     isLoading: allUsersLoading,
     error: allUsersError,
   } = useGetAllUsers();
 
-  // State for agent requests modal and agent details
+  // Balance requests (for admin management)
+  const {
+    data: pendingBalanceRequestsData,
+    isLoading: pendingBalanceRequestsLoading,
+    error: pendingBalanceRequestsError,
+  } = useGetPendingBalanceRequests();
+  const approveBalanceRequestMutation = useApproveBalanceRequest();
+
+  // Agent approval state
   const [showAgentRequests, setShowAgentRequests] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<IAccount | null>(null);
 
-  const approveMutation = useApproveAgent();
+  // Balance request modal state
+  const [showBalanceRequests, setShowBalanceRequests] = useState(false);
 
-  // Show loader if any data is still loading
+  const approveAgentMutation = useApproveAgent();
+
+  // Show Loader if any data is still loading
   if (
     totalBalanceLoading ||
     totalUserBalanceLoading ||
     totalAgentBalanceLoading ||
-    allUsersLoading
+    allUsersLoading ||
+    pendingBalanceRequestsLoading
   ) {
     return <Loader />;
   }
 
-  // Show error message if any query failed
+  // Error handling if any query failed
   if (
     totalBalanceError ||
     totalUserBalanceError ||
     totalAgentBalanceError ||
-    allUsersError
+    allUsersError ||
+    pendingBalanceRequestsError
   ) {
     return (
       <div className="text-center text-red-600 p-4">
@@ -71,7 +90,7 @@ const AdminHomePage: React.FC = () => {
     );
   }
 
-  // Fallback: try to get the value either nested in data or directly at the top level.
+  // Fallback: try to get the balance values from nested data or directly.
   const totalBalance =
     ((totalBalanceData as any)?.data?.totalBalance as number) ??
     ((totalBalanceData as any)?.totalBalance as number);
@@ -82,24 +101,22 @@ const AdminHomePage: React.FC = () => {
     ((totalAgentBalanceData as any)?.data?.totalAgentBalance as number) ??
     ((totalAgentBalanceData as any)?.totalAgentBalance as number);
 
-  // Extract all users
+  // Extract users and statistics
   const allUsers = allUsersData?.data?.users || [];
   const totalUsersCount = allUsersData?.data?.totalUsers || allUsers.length;
   const activeUsers = allUsersData?.data?.activeUsers || 0;
   const inactiveUsers = allUsersData?.data?.inactiveUsers || 0;
-  // Count agents and regular users
   const totalAgentsCount = allUsers.filter(
     (user) => user?.role === "agent"
   ).length;
   const totalRegularUsers = totalUsersCount - totalAgentsCount;
-  // Define pending agents (agents with isActive === false)
   const pendingAgents = allUsers.filter(
     (user) => user.role === "agent" && !user.isActive
   );
 
-  // Handle agent approval
-  const handleApprove = (agentId: string) => {
-    approveMutation.mutate(agentId, {
+  // Handler for approving an agent
+  const handleApproveAgent = (agentId: string) => {
+    approveAgentMutation.mutate(agentId, {
       onSuccess: () => {
         setSelectedAgent(null);
         setShowAgentRequests(false);
@@ -110,19 +127,21 @@ const AdminHomePage: React.FC = () => {
     });
   };
 
+  // Handler for approving a balance request
+  const handleApproveBalanceRequest = (requestId: string) => {
+    approveBalanceRequestMutation.mutate(requestId, {
+      onSuccess: () => {
+        toast.success("Balance request approved successfully.");
+        setShowBalanceRequests(false);
+      },
+      onError: () => {
+        toast.error("Failed to approve balance request.");
+      },
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      {/* Header */}
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-[#cf1263]">Admin Dashboard</h1>
-        <Link to="/">
-          <button className="flex items-center gap-2 bg-[#cf1263] text-white px-4 py-2 rounded hover:bg-[#b10f57] transition">
-            <Icon icon="mdi:home" className="w-6 h-6" />
-            Back to Home
-          </button>
-        </Link>
-      </div>
-
       {/* Balance Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         {adminBalance !== undefined && (
@@ -190,6 +209,20 @@ const AdminHomePage: React.FC = () => {
         </button>
       </div>
 
+      {/* Balance Requests Section */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-[#cf1263] mb-4 flex items-center gap-2">
+          <Icon icon="mdi:wallet-plus" className="w-8 h-8" />
+          Balance Request ({pendingBalanceRequestsData?.data?.length ?? 0})
+        </h2>
+        <button
+          onClick={() => setShowBalanceRequests(true)}
+          className="bg-[#cf1263] text-white px-4 py-2 rounded hover:bg-[#b10f57] transition"
+        >
+          Manage Balance Requests
+        </button>
+      </div>
+
       {/* Modal for Pending Agent Requests */}
       {showAgentRequests && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -232,7 +265,6 @@ const AdminHomePage: React.FC = () => {
                 )}
               </>
             ) : (
-              // Agent Detail Modal
               <div>
                 <h3 className="text-2xl font-bold text-[#cf1263] mb-4">
                   Agent Details
@@ -268,13 +300,59 @@ const AdminHomePage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => {
-                      if (selectedAgent) handleApprove(selectedAgent._id);
+                      if (selectedAgent) handleApproveAgent(selectedAgent._id);
                     }}
                     className="px-4 py-2 bg-[#cf1263] text-white rounded hover:bg-[#b10f57] transition"
                   >
                     Approve
                   </button>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Pending Balance Requests */}
+      {showBalanceRequests && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg w-full max-w-2xl p-6 mx-4 relative">
+            <button
+              onClick={() => setShowBalanceRequests(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+            >
+              <Icon icon="mdi:close" className="w-6 h-6" />
+            </button>
+            <h3 className="text-2xl font-bold text-[#cf1263] mb-4">
+              Pending Balance Requests
+            </h3>
+            {pendingBalanceRequestsData?.data?.length === 0 ? (
+              <p>No pending balance requests.</p>
+            ) : (
+              <div className="space-y-3">
+                {pendingBalanceRequestsData?.data?.map(
+                  (req: IBalanceRequest) => (
+                    <div
+                      key={req.requestId}
+                      className="p-4 border rounded shadow hover:bg-gray-50 flex items-center justify-between"
+                    >
+                      <div>
+                        <p className="font-medium">User ID: {req.userId}</p>
+                        <p className="text-sm text-gray-500">
+                          Amount: ৳{req.amount}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          handleApproveBalanceRequest(req.requestId)
+                        }
+                        className="px-4 py-2 bg-[#cf1263] text-white rounded hover:bg-[#b10f57] transition"
+                      >
+                        Approve
+                      </button>
+                    </div>
+                  )
+                )}
               </div>
             )}
           </div>
