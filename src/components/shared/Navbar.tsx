@@ -6,7 +6,8 @@ import useAuth from "../../hooks/useAuth";
 import { useLogoutAccount } from "../../api/authAPI";
 
 const Navbar = () => {
-  const { user } = useAuth();
+  // Destructure refetch along with user
+  const { user, refetch } = useAuth();
   const navigate = useNavigate();
   const { mutate: logoutUser, isPending: isLoggingOut } = useLogoutAccount();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
@@ -17,6 +18,18 @@ const Navbar = () => {
       onSuccess: () => navigate("/login"),
       onError: (error: Error) => console.error(error.message),
     });
+  };
+
+  // Handler to refetch the balance and show it for 6 seconds
+  const handleShowBalance = () => {
+    // Refetch the latest user data
+    refetch();
+    // Show the balance
+    setShowBalance(true);
+    // Hide the balance after 6 seconds
+    setTimeout(() => {
+      setShowBalance(false);
+    }, 4000);
   };
 
   return (
@@ -33,7 +46,7 @@ const Navbar = () => {
       </div>
       <div className="flex-1 flex justify-center">
         <div
-          onClick={() => setShowBalance(true)}
+          onClick={handleShowBalance}
           className="relative cursor-pointer bg-white text-black px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-500 ease-in-out max-w-xs w-full"
         >
           <span
