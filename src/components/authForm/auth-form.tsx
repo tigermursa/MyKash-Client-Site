@@ -128,7 +128,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                   {...registerMethods.register("name", {
                     required: "Name is required",
                   })}
-                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg"
                 />
                 <div className="min-h-[1.5rem]">
                   {registerMethods.formState.errors.name && (
@@ -146,7 +146,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                   {...registerMethods.register("mobile", {
                     required: "Mobile is required",
                   })}
-                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg"
                 />
                 <div className="min-h-[1.5rem]">
                   {registerMethods.formState.errors.mobile && (
@@ -173,7 +173,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                       message: "Invalid email address",
                     },
                   })}
-                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg"
                 />
                 <div className="min-h-[1.5rem]">
                   {registerMethods.formState.errors.email && (
@@ -189,7 +189,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                   {...registerMethods.register("nid", {
                     required: "NID is required",
                   })}
-                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                  className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg"
                 />
                 <div className="min-h-[1.5rem]">
                   {registerMethods.formState.errors.nid && (
@@ -208,7 +208,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                 {...registerMethods.register("role", {
                   required: "Role is required",
                 })}
-                className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+                className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg"
               >
                 <option value="user">User</option>
                 <option value="agent">Agent</option>
@@ -223,7 +223,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
               {...loginMethods.register("identifier", {
                 required: "Identifier is required",
               })}
-              className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+              className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg"
             />
             <div className="min-h-[1.5rem]">
               {loginMethods.formState.errors.identifier && (
@@ -252,7 +252,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
                     minLength: { value: 5, message: "PIN must be 5 digits" },
                     maxLength: { value: 5, message: "PIN must be 5 digits" },
                   }))}
-              className="w-full h-12 px-3 py-2 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#cf1263] focus:border-transparent"
+              className="w-full h-12 px-3 py-2 pr-12 border border-gray-300 rounded-lg"
             />
             <button
               type="button"
