@@ -160,11 +160,7 @@ const Services: React.FC = () => {
       onClick={onClick}
       className="group cursor-pointer flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow transition transform hover:scale-105 hover:shadow-xl"
     >
-      <Icon
-        icon={icon}
-        width="48"
-        className="text-indigo-600 group-hover:text-indigo-800"
-      />
+      <Icon icon={icon} className="text-[#cf1263] w-12 sm:w-16 md:w-20" />
       <p className="mt-3 text-lg font-semibold text-gray-800">{label}</p>
     </div>
   );
@@ -172,7 +168,7 @@ const Services: React.FC = () => {
   return (
     <div className="p-4">
       {/* Service Cards Grid */}
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
         {user!.role === "user" && (
           <>
             <ServiceCard
@@ -206,8 +202,7 @@ const Services: React.FC = () => {
           <div className="group cursor-pointer flex flex-col items-center justify-center p-6 bg-white rounded-lg shadow transition transform hover:scale-105 hover:shadow-xl">
             <Icon
               icon="mdi:history"
-              width="48"
-              className="text-indigo-600 group-hover:text-indigo-800"
+              className="text-[#cf1263] w-12 sm:w-16 md:w-20"
             />
             <p className="mt-3 text-lg font-semibold text-gray-800">History</p>
           </div>
