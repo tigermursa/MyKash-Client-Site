@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
 import useAuth from "../hooks/useAuth";
@@ -20,12 +21,11 @@ interface Transaction {
     name: string;
   };
   fee: number;
-  transactionType: "sendMoney" | "cashOut";
+  transactionType: "sendMoney" | "cashOut" | "cashIn"; // added cashIn
 }
 
 const History: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
-  // Use user.userID for comparison
   const loggedInUserId = user?.userID;
   const userID = user?.userID;
   const [selectedTxId, setSelectedTxId] = useState<string | null>(null);
@@ -36,7 +36,7 @@ const History: React.FC = () => {
     isLoading: historyLoading,
   } = useGetHistory(userID as string);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Map the fetched data into our Transaction type
   const transactions: Transaction[] = (data?.data || []).map((tx: any) => ({
     transactionId: tx.transactionId,
     amount: tx.amount,
@@ -64,11 +64,10 @@ const History: React.FC = () => {
     (tx) => tx.transactionId === selectedTxId
   );
 
-  // Determine if the transaction is incoming:
-  // For "sendMoney", if the logged in user is the receiver (toAccount), it's incoming.
+  // Updated logic: For both sendMoney and cashIn, if the logged-in user is the receiver, it's incoming.
   const isIncoming = (tx: Transaction) =>
-    loggedInUserId === tx.toAccount.userID &&
-    tx.transactionType === "sendMoney";
+    (tx.transactionType === "sendMoney" || tx.transactionType === "cashIn") &&
+    loggedInUserId === tx.toAccount.userID;
 
   // Get icon: plus for incoming, minus for outgoing.
   const getArrowIcon = (tx: Transaction) =>
@@ -83,8 +82,7 @@ const History: React.FC = () => {
     };
   };
 
-  // Get counterpart account details based on transaction direction.
-  // If incoming, show the "From" account; otherwise, the "To" account.
+  // Determine the counterpart: if incoming, show "From" (sender); if outgoing, show "To" (receiver).
   const getCounterpart = (tx: Transaction) => {
     if (isIncoming(tx)) {
       return {
@@ -281,6 +279,7 @@ interface DetailItemProps {
   value: string | number;
   className?: string;
 }
+
 const DetailItem: React.FC<DetailItemProps> = ({
   icon,
   label,

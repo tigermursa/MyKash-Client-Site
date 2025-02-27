@@ -3,7 +3,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  --color: hsl(143, 89%, 65%);
+  --color: hsl(313, 84%, 50%);
   --animation: 2s ease-in-out infinite;
 }
 
