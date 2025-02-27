@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const PendingApproval = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#cf1263] to-[#a50e4f] p-4">
@@ -43,6 +45,12 @@ const PendingApproval = () => {
           </a>
           .
         </p>
+        <Link to={"/login"}>
+          {" "}
+          <button className="mt-5 border p-2 rounded-md text-[#cf1263]">
+            Back
+          </button>
+        </Link>
       </div>
     </div>
   );

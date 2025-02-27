@@ -9,7 +9,6 @@ import {
   IAccount,
 } from "../../api/authAPI";
 import { useGetUser } from "../../api/adminAPI";
-import useAuth from "../../hooks/useAuth";
 
 interface AuthFormProps {
   type: "sign-in" | "sign-up";
@@ -36,7 +35,6 @@ interface LoginFormData {
 }
 
 export const AuthForm = ({ type }: AuthFormProps) => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const isRegister = type === "sign-up";
@@ -47,23 +45,28 @@ export const AuthForm = ({ type }: AuthFormProps) => {
     useRegisterAccount();
   const { mutate: loginUser, isPending: isLoggingIn } = useLoginAccount();
 
-  // For agents: we'll use this state to trigger the useGetUser hook
+  // For admin/agent: use this state to trigger the useGetUser hook.
   const [agentId, setAgentId] = useState<string | null>(null);
 
-  // This hook will only run when agentId is set (non-null)
+  // The useGetUser hook will fetch the full user data when agentId is set.
   const { data: agentData, isLoading: agentLoading } = useGetUser(
     agentId || ""
   );
 
-  // Once agent data is available, check active status and navigate accordingly.
+  // When user data is available, check role and active status and navigate accordingly.
   useEffect(() => {
     if (agentId && agentData) {
-      if (agentData.data.isActive) {
+      if (agentData.data.role === "admin") {
         toast.success("Login successful!");
-        navigate("/home");
-      } else {
-        toast.info("Your account is pending approval.");
-        navigate("/approval");
+        navigate("/admin/home");
+      } else if (agentData.data.role === "agent") {
+        if (agentData.data.isActive) {
+          toast.success("Login successful!");
+          navigate("/home");
+        } else {
+          toast.info("Your account is pending approval.");
+          navigate("/approval");
+        }
       }
     }
   }, [agentData, agentId, navigate]);
@@ -73,7 +76,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
       onSuccess: (response) => {
         localStorage.setItem("userIdmykash", response.data.userID);
         toast.success("Registration successful!");
-        // For agents navigate to approval, for users to home
+        // For agents navigate to approval, for users navigate to home.
         navigate(response.data.role === "user" ? "/home" : "/approval");
       },
       onError: (error: Error) => toast.error(error.message),
@@ -86,13 +89,15 @@ export const AuthForm = ({ type }: AuthFormProps) => {
       {
         onSuccess: (response) => {
           localStorage.setItem("userIdmykash", response.data.userID);
-          if (response.data.role === "admin") {
-            navigate("/admin/home");
-          } else if (response.data.role === "agent") {
-            setAgentId(user?.userID as string);
-          } else {
+          if (response.data.role === "user") {
             toast.success("Login successful!");
             navigate("/home");
+          } else if (
+            response.data.role === "agent" ||
+            response.data.role === "admin"
+          ) {
+            // Trigger useGetUser by setting the userID.
+            setAgentId(response.data.userID);
           }
         },
         onError: (error: Error) => toast.error(error.message),
