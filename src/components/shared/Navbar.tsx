@@ -6,7 +6,6 @@ import useAuth from "../../hooks/useAuth";
 import { useLogoutAccount } from "../../api/authAPI";
 
 const Navbar = () => {
-  // Destructure refetch along with user
   const { user, refetch } = useAuth();
   const navigate = useNavigate();
   const { mutate: logoutUser, isPending: isLoggingOut } = useLogoutAccount();

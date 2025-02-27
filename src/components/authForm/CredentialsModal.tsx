@@ -29,7 +29,6 @@ const credentialsData = [
 ];
 
 const CredentialsModal: React.FC<CredentialsModalProps> = ({ onClose }) => {
-  // This state tracks which fields have been recently copied.
   const [copied, setCopied] = useState<{ [key: string]: boolean }>({});
 
   const handleCopy = (text: string, key: string) => {

@@ -4,25 +4,7 @@ import { Icon } from "@iconify/react";
 import useAuth from "../hooks/useAuth";
 import { useGetHistory } from "../api/adminAPI";
 import { Link } from "react-router-dom";
-
-interface Transaction {
-  transactionId: string;
-  amount: number;
-  createdAt: string;
-  updatedAt: string;
-  fromAccount: {
-    _id: string;
-    userID: string;
-    name: string;
-  };
-  toAccount: {
-    _id: string;
-    userID: string;
-    name: string;
-  };
-  fee: number;
-  transactionType: "sendMoney" | "cashOut" | "cashIn"; // added cashIn
-}
+import { Transaction } from "../types/HistorypagesTypes";
 
 const History: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
