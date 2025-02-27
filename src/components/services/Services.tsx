@@ -150,7 +150,7 @@ const Services: React.FC = () => {
     }
   };
 
-  // A reusable service card design
+  // A reusable service card design with updated icons and responsive sizes
   const ServiceCard: React.FC<{
     label: string;
     icon: string;
@@ -178,7 +178,7 @@ const Services: React.FC = () => {
             />
             <ServiceCard
               label="Cash Out"
-              icon="mdi:cash-refund"
+              icon="mdi:bank-transfer-out"
               onClick={() => handleServiceClick("cashOut")}
             />
           </>
@@ -187,12 +187,12 @@ const Services: React.FC = () => {
           <>
             <ServiceCard
               label="Cash In"
-              icon="mdi:cash-plus"
+              icon="mdi:bank-transfer-in"
               onClick={() => handleServiceClick("cashIn")}
             />
             <ServiceCard
               label="Balance Request"
-              icon="mdi:wallet-plus"
+              icon="mdi:wallet-outline"
               onClick={() => handleServiceClick("balanceRequest")}
             />
           </>
