@@ -2,8 +2,10 @@ import App from "../App";
 import SignIn from "../components/authForm/login";
 import SignUp from "../components/authForm/register";
 import AdminHomePage from "../pages/admin/AdminHomePage";
+import AdminUserManagementPage from "../pages/admin/AdminUserManagementPage";
 import History from "../pages/History";
 import Home from "../pages/Home";
+import NotFoundPage from "../pages/NotFound";
 
 import PendingApproval from "../pages/PendingApproval";
 import AdminRoute from "./AdminRoute";
@@ -36,10 +38,18 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/admin/home",
+        path: "/admin/dashboard",
         element: (
           <AdminRoute>
             <AdminHomePage />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: "/admin/user-management",
+        element: (
+          <AdminRoute>
+            <AdminUserManagementPage />
           </AdminRoute>
         ),
       },
@@ -64,11 +74,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/*",
-    element: (
-      <h1 className="text-red-800 flex h-screen w-full justify-center items-center font-bold">
-        Not Found
-      </h1>
-    ),
+    element: <NotFoundPage />,
   },
 ]);
 

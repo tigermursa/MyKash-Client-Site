@@ -58,7 +58,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
     if (agentId && agentData) {
       if (agentData.data.role === "admin") {
         toast.success("Login successful!");
-        navigate("/admin/home");
+        navigate("/admin/dashboard");
       } else if (agentData.data.role === "agent") {
         if (agentData.data.isActive) {
           toast.success("Login successful!");
@@ -106,7 +106,7 @@ export const AuthForm = ({ type }: AuthFormProps) => {
   };
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md mx-auto my-8">
+    <div className="bg-white p-8 rounded-lg  w-full max-w-md mx-auto my-8">
       <h2 className="text-3xl font-bold mb-8 text-center text-[#cf1263]">
         {isRegister ? "Create Account" : "Welcome Back"}
       </h2>

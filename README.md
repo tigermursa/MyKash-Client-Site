@@ -32,6 +32,12 @@
 - **Mobile:** 0145698659
 - **PIN:** 12345
 
+This is a Mobile Financial Service (MFS) application built with three roles: user, agent, and admin. In the application:
+
+- **Users** can send money to other users, as well as perform cash-in and cash-out transactions with the assistance of agents.
+- **Agents** help users with cash transactions.
+- **Admins** can block users, approve agent accounts, and manage recharge requests.
+
 ## Pending Tasks in this Project
 
 1. Have to make input taking modal more looking good

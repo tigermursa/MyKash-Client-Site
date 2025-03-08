@@ -10,6 +10,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Cash</title>
   </head>
+  <script type="text/javascript">
+    (function (w, d, s, u) {
+      w.RocketChat = function (c) {
+        w.RocketChat._.push(c);
+      };
+      w.RocketChat._ = []; // This ensures _ is defined as an array
+      w.RocketChat.url = u;
+      var h = d.getElementsByTagName(s)[0],
+        j = d.createElement(s);
+      j.async = true;
+      j.src =
+        "http://localhost:3000/livechat/rocketchat-livechat.min.js?_=201903270000";
+      h.parentNode.insertBefore(j, h);
+    })(window, document, "script", "http://localhost:3000/livechat");
+  </script>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

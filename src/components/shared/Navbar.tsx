@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaUserCircle, FaWallet } from "react-icons/fa";
+import {
+  FaUserCircle,
+  FaWallet,
+  FaHome,
+  FaTachometerAlt,
+} from "react-icons/fa"; // Changed Dashboard icon
 import { FiMenu, FiLogOut, FiUser } from "react-icons/fi";
 import useAuth from "../../hooks/useAuth";
 import { useLogoutAccount } from "../../api/authAPI";
@@ -19,13 +24,9 @@ const Navbar = () => {
     });
   };
 
-  // Handler to refetch the balance and show it for 6 seconds
   const handleShowBalance = () => {
-    // Refetch the latest user data
     refetch();
-    // Show the balance
     setShowBalance(true);
-    // Hide the balance after 6 seconds
     setTimeout(() => {
       setShowBalance(false);
     }, 4000);
@@ -43,6 +44,7 @@ const Navbar = () => {
           </>
         ) : null}
       </div>
+
       <div className="flex-1 flex justify-center">
         <div
           onClick={handleShowBalance}
@@ -69,24 +71,75 @@ const Navbar = () => {
           </span>
         </div>
       </div>
+
       <div className="flex items-center space-x-4">
+        {/* Home Button (Desktop) */}
+        <button
+          onClick={() => navigate("/home")}
+          className="hidden md:flex items-center bg-white text-[#cf1263] hover:bg-gray-200 hover:cursor-pointer px-4 py-2 rounded-md space-x-2"
+        >
+          <FaHome className="text-xl" />
+          <span>Home</span>
+        </button>
+
+        {/* Dashboard Button (Only for Admins, Desktop) */}
+        {user?.role === "admin" && (
+          <button
+            onClick={() => navigate("/admin/dashboard")}
+            className="hidden md:flex items-center bg-white text-[#cf1263] hover:bg-gray-200 hover:cursor-pointer px-4 py-2 rounded-md space-x-2"
+          >
+            <FaTachometerAlt className="text-xl" /> {/* Updated Icon */}
+            <span>Dashboard</span>
+          </button>
+        )}
+
+        {/* Logout Button (Desktop) */}
         <button
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className="hidden md:flex items-center bg-white text-red-600 hover:bg-gray-200 hover:cursor-pointer  px-4 py-2 rounded-md space-x-2"
+          className="hidden md:flex items-center bg-white text-red-600 hover:bg-gray-200 hover:cursor-pointer px-4 py-2 rounded-md space-x-2"
         >
           <FiLogOut />
           <span>Logout</span>
         </button>
+
+        {/* Mobile Dropdown Menu */}
         <div className="md:hidden relative">
           <button
             onClick={() => setDropdownOpen(!isDropdownOpen)}
             className="p-2"
           >
-            <FiMenu className="text-2xl text-gray-700" />
+            <FiMenu className="text-2xl text-gray-100" />
           </button>
           {isDropdownOpen && (
             <div className="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg z-10">
+              {/* Home Button (Mobile) */}
+              <button
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate("/home");
+                }}
+                className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+              >
+                <FaHome className="mr-2" />
+                Home
+              </button>
+
+              {/* Dashboard Button (Only for Admins, Mobile) */}
+              {user?.role === "admin" && (
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    navigate("/admin/dashboard");
+                  }}
+                  className="w-full flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  <FaTachometerAlt className="mr-2" /> {/* Updated Icon */}
+                  Dashboard
+                </button>
+              )}
+
+              {/* Profile Button (Mobile) */}
               <button
                 onClick={() => {
                   setDropdownOpen(false);
@@ -97,6 +150,8 @@ const Navbar = () => {
                 <FiUser className="mr-2" />
                 Profile
               </button>
+
+              {/* Logout Button (Mobile) */}
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}

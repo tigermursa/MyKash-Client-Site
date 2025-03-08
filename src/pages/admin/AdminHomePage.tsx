@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { Icon } from "@iconify/react";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
 
 import {
   useGetTotalBalance,
@@ -17,7 +19,6 @@ import {
 } from "../../api/balanceRequestAPI";
 import Loader from "../../components/UI/Loader/Loader";
 import useAuth from "../../hooks/useAuth";
-import { toast } from "react-toastify";
 
 const AdminHomePage: React.FC = () => {
   const { user } = useAuth();
@@ -358,6 +359,16 @@ const AdminHomePage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Updated User Management Button */}
+      <div className="border max-w-[250px]  bg-[#cf1263] text-white p-2 mt-5 hover:bg-[#d66d8c] flex items-center justify-center gap-2 rounded">
+        <Icon icon="mdi:account-group" width={24} />
+        <Link to={"/admin/user-management"}>
+          <button className="focus:outline-none">
+            User Management ({totalUsersCount})
+          </button>
+        </Link>
+      </div>
     </div>
   );
 };

@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  UseMutationOptions,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 const BASE_URL_FROM_ENV = import.meta.env.VITE_BASE_URL;
 const BASE_URL = `${BASE_URL_FROM_ENV}/api/v1/admin`;
@@ -67,6 +72,9 @@ export interface IAdminUsersResponseData {
 export const approveAgent = (id: string): Promise<IAuthResponse<IAccount>> =>
   apiRequest<IAuthResponse<IAccount>>(`/approve-agent/${id}`, "PUT");
 
+export const blockUser = (id: string): Promise<IAuthResponse<IAccount>> =>
+  apiRequest<IAuthResponse<IAccount>>(`/block-user/${id}`, "PUT");
+
 export const getAllUsers = (): Promise<
   IAuthResponse<IAdminUsersResponseData>
 > => apiRequest<IAuthResponse<IAdminUsersResponseData>>("/users", "GET");
@@ -107,6 +115,26 @@ export const useApproveAgent = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
+  });
+};
+
+export const useBlockUser = (
+  options?: Omit<
+    UseMutationOptions<IAuthResponse<IAccount>, Error, string>,
+    "mutationFn"
+  >
+) => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => blockUser(id),
+    onSuccess: (data, variables, context) => {
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+      options?.onSuccess?.(data, variables, context);
+    },
+    onError: (error, variables, context) => {
+      options?.onError?.(error, variables, context);
+    },
+    ...options,
   });
 };
 
